@@ -1,6 +1,5 @@
 ---
 # handlers file for role1
----
 - name: Reload nginx
   service:
     name: nginx
