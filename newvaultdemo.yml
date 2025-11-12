@@ -1,0 +1,13 @@
+---
+- name: Vault print
+  hosts: linux
+  gather_facts: false  
+  connection: local
+  tasks:
+    - name: Include Vault variables
+      ansible.builtin.include_vars:
+        file: secret.yml
+
+    - name: Print variable
+      ansible.builtin.debug:
+        var: password

@@ -1,0 +1,26 @@
+---
+# YAML documents begin with the document separator ---
+
+# The minus in YAML this indicates a list item.  The playbook contains a list
+# of plays, with each play being a dictionary
+-
+
+  # Hosts: where our play will run and options it will run with
+  hosts: linux
+  vars:
+    users:
+      user1:
+        firstname: User1
+        homedir: /users/user1
+      user2:
+        firstname: User2
+        homedir: /users/user2
+  # Vars: variables that will apply to the play, on all target systems
+
+  # Tasks: the list of tasks that will be executed within the play, this section
+  # can also be used for pre and post tasks
+  tasks:
+    - name: Print Variable
+      ansible.builtin.debug:
+      #  msg: "Value of the Variable {{ users['user1']['firstname'] }}"
+        var: users['user1']['firstname']

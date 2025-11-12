@@ -1,0 +1,31 @@
+#install nginx webserver
+
+---
+- name: Install NGINX WebServer
+  hosts: linux
+  become: true
+  become_method: sudo
+ # gather_facts: yes
+  tasks:
+    - name: Install Nginx
+      apt:
+        name: nginx
+        state: present
+        update_cache: yes
+      when: ansible_distribution == 'Ubuntu'
+      notify:
+        - Restart Nginx
+
+    - name: Configure nginx
+      template:
+        src: default
+        dest: /etc/nginx/sites-available/default
+      notify:
+        - Reload Nginx
+
+  handlers:
+    - name: Restart Nginx
+      shell: service nginx restart
+
+    - name: Reload Nginx
+      shell: service nginx reload

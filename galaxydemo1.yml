@@ -1,0 +1,10 @@
+---
+- name: Deploy Apache using Galaxy role
+  hosts: linux
+  become: yes
+
+  roles:
+    - role: geerlingguy.apache
+      # you can override role defaults with vars if needed
+      # vars:
+      #   apache_listen_port: 8080

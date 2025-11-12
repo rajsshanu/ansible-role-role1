@@ -1,0 +1,62 @@
+---
+- name: Install and configure NGINX on linux group (Ubuntu & CentOS)
+  hosts: linux
+  become: yes
+  gather_facts: yes
+  vars:
+    configure_nginx: true
+    nginx_template: default.j2
+
+  tasks:
+    - name: Install Nginx (Debian/Ubuntu)
+      apt:
+        name: nginx
+        state: present
+        update_cache: yes
+      when: ansible_facts['os_family'] == 'Debian'
+      notify: Restart Nginx
+
+    - name: Install Nginx (RHEL/CentOS)
+      dnf:
+        name: nginx
+        state: present
+        update_cache: yes
+      when: ansible_facts['os_family'] == 'RedHat'
+      notify: Restart Nginx
+
+    - name: Deploy nginx template (Debian)
+      template:
+        src: "{{ nginx_template }}"
+        dest: /etc/nginx/sites-available/default
+        mode: '0644'
+      when:
+        - configure_nginx | bool
+        - ansible_facts['os_family'] == 'Debian'
+      notify: Reload Nginx
+
+    - name: Deploy nginx template (RedHat)
+      template:
+        src: "{{ nginx_template }}"
+        dest: /etc/nginx/nginx.conf
+        mode: '0644'
+      when:
+        - configure_nginx | bool
+        - ansible_facts['os_family'] == 'RedHat'
+      notify: Reload Nginx
+
+    - name: Ensure nginx enabled and started
+      service:
+        name: nginx
+        state: started
+        enabled: yes
+
+  handlers:
+    - name: Restart Nginx
+      service:
+        name: nginx
+        state: restarted
+
+    - name: Reload Nginx
+      service:
+        name: nginx
+        state: reloaded

@@ -1,0 +1,68 @@
+---
+- name: Ensure web + ssh services installed and running on Debian & RedHat families
+  hosts: all
+  become: yes
+  gather_facts: yes
+
+  vars:
+    # mapping per os_family; list to allow loop usage
+    service_map:
+      Debian:
+        - { pkg: apache2, svc: apache2 }   # Ubuntu/Debian
+        - { pkg: openssh-server, svc: ssh } # optional: ensure ssh package (ssh service name 'ssh' on Debian)
+      RedHat:
+        - { pkg: httpd, svc: httpd }       # CentOS/RHEL
+        - { pkg: openssh-server, svc: sshd }
+
+  tasks:
+    - name: Select services list for this host
+      set_fact:
+        services_to_manage: "{{ service_map[ansible_facts['os_family']] | default([]) }}"
+
+    - name: Fail early for unsupported OS
+      fail:
+        msg: "Unsupported OS family {{ ansible_facts['os_family'] }} — please update service_map."
+      when: services_to_manage | length == 0
+
+    - name: Install packages for services (Debian)
+      apt:
+        name: "{{ item.pkg }}"
+        state: present
+        update_cache: yes
+      loop: "{{ services_to_manage }}"
+      when: ansible_facts['os_family'] == 'Debian'
+      loop_control:
+        label: "{{ item.pkg }}"
+
+    - name: Install packages for services (RedHat)
+      dnf:
+        name: "{{ item.pkg }}"
+        state: present
+        update_cache: yes
+      loop: "{{ services_to_manage }}"
+      when: ansible_facts['os_family'] == 'RedHat'
+      loop_control:
+        label: "{{ item.pkg }}"
+
+    - name: Ensure services are started and enabled (loop)
+      service:
+        name: "{{ item.svc }}"
+        state: started
+        enabled: yes
+      loop: "{{ services_to_manage }}"
+      loop_control:
+        label: "{{ item.svc }}"
+      register: service_results
+      ignore_errors: yes
+
+    - name: Report any services that failed to start
+      debug:
+        msg: "Service {{ item.item.svc }} on {{ inventory_hostname }} failed: {{ item.msg | default(item.stderr | default('unknown')) }}"
+      loop: "{{ service_results.results | selectattr('failed') | list }}"
+      when: service_results is defined
+
+    - name: Show success services
+      debug:
+        msg: "Service {{ item.item.svc }} on {{ inventory_hostname }} OK (changed={{ item.changed }})"
+      loop: "{{ service_results.results | rejectattr('failed') | list }}"
+      when: service_results is defined
