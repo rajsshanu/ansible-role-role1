@@ -1,2 +1,6 @@
 ---
 # defaults file for role1
+nginx_conf_dest: >-
+  {{ '/etc/nginx/sites-available/default'
+     if ansible_facts['os_family'] == 'Debian'
+     else '/etc/nginx/nginx.conf' }}
