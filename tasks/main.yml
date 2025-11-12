@@ -1,0 +1,30 @@
+---
+# Install nginx and deploy a simple site
+- name: Ensure nginx package installed
+  apt:
+    name: nginx
+    state: present
+    update_cache: yes
+  when: ansible_facts['os_family'] == 'Debian'
+
+- name: Ensure nginx package installed (RedHat)
+  dnf:
+    name: nginx
+    state: present
+    update_cache: yes
+  when: ansible_facts['os_family'] == 'RedHat'
+
+- name: Deploy nginx config from template
+  template:
+    src: default.j2
+    dest: "{{ nginx_conf_dest }}"
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Reload nginx
+
+- name: Ensure nginx is started and enabled
+  service:
+    name: nginx
+    state: started
+    enabled: yes
